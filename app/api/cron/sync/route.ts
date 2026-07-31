@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { syncYoutube } from "@/lib/sync/youtube";
 import { syncFacebook, syncInstagram } from "@/lib/sync/meta";
 
 export const dynamic = "force-dynamic";
 
 async function ensureChannel(platform: string, externalId: string, name: string) {
+  const supabaseAdmin = getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
     .from("channels")
     .upsert({ platform, external_id: externalId, name }, { onConflict: "platform,external_id" })
@@ -16,6 +17,7 @@ async function ensureChannel(platform: string, externalId: string, name: string)
 }
 
 async function runSync(platform: string, fn: () => Promise<void>) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     await fn();
     await supabaseAdmin.from("sync_log").insert({ platform, status: "success" });
@@ -35,6 +37,8 @@ export async function GET(req: NextRequest) {
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  const supabaseAdmin = getSupabaseAdmin();
 
   const ytChannelId = process.env.YOUTUBE_CHANNEL_ID!;
   const ytDbId = await ensureChannel("youtube", ytChannelId, "Biohacker Latino (YouTube)");

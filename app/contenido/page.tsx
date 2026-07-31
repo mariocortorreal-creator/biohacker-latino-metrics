@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +9,7 @@ const PLATFORM_LABEL: Record<string, string> = {
 };
 
 async function getRanking() {
+  const supabaseAdmin = getSupabaseAdmin();
   const { data: items } = await supabaseAdmin
     .from("content_items")
     .select("*, content_metrics_daily(*)")
