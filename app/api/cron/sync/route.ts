@@ -16,7 +16,10 @@ async function ensureChannel(platform: string, externalId: string, name: string)
   return data.id as string;
 }
 
-async function runSync(platform: string, fn: () => Promise<void>) {
+// Corre la sincronización de una plataforma de forma aislada: si falla
+// (por ejemplo, porque a esa plataforma todavía le faltan credenciales),
+// se registra el error en sync_log y las demás plataformas siguen su curso.
+async function runPlatform(platform: string, fn: () => Promise<void>) {
   const supabaseAdmin = getSupabaseAdmin();
   try {
     await fn();
@@ -38,19 +41,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
+  await runPlatform("youtube", async () => {
+    const ytChannelId = process.env.YOUTUBE_CHANNEL_ID!;
+    const ytDbId = await ensureChannel("youtube", ytChannelId, "Biohacker Latino (YouTube)");
+    await syncYoutube(getSupabaseAdmin(), ytDbId, ytChannelId);
+  });
 
-  const ytChannelId = process.env.YOUTUBE_CHANNEL_ID!;
-  const ytDbId = await ensureChannel("youtube", ytChannelId, "Biohacker Latino (YouTube)");
-  await runSync("youtube", () => syncYoutube(supabaseAdmin, ytDbId, ytChannelId));
+  await runPlatform("facebook", async () => {
+    const fbPageId = process.env.META_PAGE_ID!;
+    const fbDbId = await ensureChannel("facebook", fbPageId, "Biohacker Latino (Facebook)");
+    await syncFacebook(getSupabaseAdmin(), fbDbId);
+  });
 
-  const fbPageId = process.env.META_PAGE_ID!;
-  const fbDbId = await ensureChannel("facebook", fbPageId, "Biohacker Latino (Facebook)");
-  await runSync("facebook", () => syncFacebook(supabaseAdmin, fbDbId));
-
-  const igId = process.env.META_IG_BUSINESS_ACCOUNT_ID!;
-  const igDbId = await ensureChannel("instagram", igId, "Biohacker Latino (Instagram)");
-  await runSync("instagram", () => syncInstagram(supabaseAdmin, igDbId));
+  await runPlatform("instagram", async () => {
+    const igId = process.env.META_IG_BUSINESS_ACCOUNT_ID!;
+    const igDbId = await ensureChannel("instagram", igId, "Biohacker Latino (Instagram)");
+    await syncInstagram(getSupabaseAdmin(), igDbId);
+  });
 
   return NextResponse.json({ ok: true });
 }
