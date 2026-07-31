@@ -66,3 +66,38 @@ h1 { font-size: 1.5rem; margin-bottom: 1.5rem; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 th, td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 th { color: var(--muted); font-weight: 500; }
+
+section + section { margin-top: 2.5rem; }
+.section-title { font-size: 1.1rem; margin: 0 0 0.25rem; }
+.section-caption { font-size: 0.85rem; color: var(--muted); margin: 0 0 1rem; }
+
+.insight-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.insight-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+
+.insight-row a { color: var(--text); text-decoration: none; font-size: 0.9rem; }
+.insight-row a:hover { color: var(--accent); }
+.insight-figure { font-size: 0.85rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge-good { color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); }
+.badge-bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 16%, transparent); }
+.badge-neutral { color: var(--muted); background: color-mix(in srgb, var(--muted) 16%, transparent); }
