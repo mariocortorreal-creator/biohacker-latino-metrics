@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { analyzeContent, computeGrowthTrend, type ContentInsightItem } from "@/lib/analysis";
+import { BarChart, type BarDatum } from "./BarChart";
 
 export const dynamic = "force-dynamic";
 
@@ -72,11 +73,53 @@ function ContentRow({
 
 export default async function AnalisisPage() {
   const { contentAnalysis, growthByChannel } = await getAnalysis();
-  const { medianViews, overperformers, underperformers, recentCount, matureCount } = contentAnalysis;
+  const {
+    medianViews,
+    topRanked,
+    topPerformer,
+    overperformers,
+    underperformers,
+    recentCount,
+    matureCount,
+  } = contentAnalysis;
+
+  const chartData: BarDatum[] = topRanked.map((item) => ({
+    id: item.id,
+    label: `[${PLATFORM_LABEL[item.platform] ?? item.platform}] ${item.title}`,
+    value: item.views,
+    status: item.status,
+  }));
 
   return (
     <main>
       <h1>Análisis</h1>
+
+      {topPerformer && (
+        <section>
+          <div className="hero-card">
+            <span className="label">Tu video/post insignia</span>
+            <span className="hero-metric">{topPerformer.views.toLocaleString("es")} vistas</span>
+            <span className="label">
+              {topPerformer.title.slice(0, 90)}
+              {topPerformer.ratioVsMedian !== null && (
+                <> — {topPerformer.ratioVsMedian.toFixed(1)}x la mediana del canal</>
+              )}
+            </span>
+          </div>
+        </section>
+      )}
+
+      <section>
+        <h2 className="section-title">Ranking de contenido</h2>
+        <p className="section-caption">
+          Las {topRanked.length} publicaciones con más vistas, contra la mediana del canal — verde
+          por encima de 1.5x, rojo por debajo de 0.5x, gris en el medio. No incluye lo publicado
+          en los últimos 5 días (ver nota abajo).
+        </p>
+        <div className="chart-card">
+          <BarChart data={chartData} medianValue={medianViews} medianLabel={`${medianViews.toLocaleString("es")} vistas`} />
+        </div>
+      </section>
 
       <section>
         <h2 className="section-title">Tendencia de crecimiento</h2>
@@ -114,9 +157,8 @@ export default async function AnalisisPage() {
       <section>
         <h2 className="section-title">Lo que está funcionando</h2>
         <p className="section-caption">
-          Contenido con al menos {medianViews > 0 ? "1.5x" : "—"} la mediana de vistas del canal
-          ({medianViews.toLocaleString("es")} vistas), excluyendo publicaciones de los últimos 5
-          días (todavía no tuvieron tiempo de recibir su alcance real).
+          Detalle con enlace directo de las barras verdes del gráfico — {medianViews > 0 ? "1.5x" : "—"}{" "}
+          o más la mediana del canal ({medianViews.toLocaleString("es")} vistas).
         </p>
         <div className="insight-list">
           {overperformers.length === 0 && (
@@ -131,8 +173,8 @@ export default async function AnalisisPage() {
       <section>
         <h2 className="section-title">Lo que no está funcionando</h2>
         <p className="section-caption">
-          Contenido con la mitad o menos de la mediana de vistas del canal, mismo criterio de
-          madurez (5+ días).
+          Detalle con enlace directo de las barras rojas — la mitad o menos de la mediana del
+          canal, con al menos 5 días para madurar.
         </p>
         <div className="insight-list">
           {underperformers.length === 0 && (
